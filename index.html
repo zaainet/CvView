@@ -184,4 +184,190 @@
         }
     </script>
 </body>
+</html><!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>နောင်ထိပ်တင် - Master Admin Command</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pyidaungsu:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root { --gold: #ffcf40; --deep-gold: #b8860b; }
+        body { font-family: 'Pyidaungsu', serif; background-color: #050505; color: #eee; min-height: 100vh; background-image: radial-gradient(at top right, #1a0202 0%, #050505 100%); }
+        .gold-text { color: var(--gold); }
+        .card { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 207, 64, 0.1); border-radius: 24px; backdrop-filter: blur(10px); }
+        
+        /* Wolf Gate (Security) */
+        #wolf-gate { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        .wolf-icon { font-size: 80px; color: #333; filter: drop-shadow(0 0 20px #ff000033); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; color: #600; } }
+        .pass-input { background: transparent; border-bottom: 2px solid #222; font-size: 24px; text-align: center; padding: 10px; width: 100%; max-width: 300px; color: var(--gold); outline: none; }
+
+        .btn-action { transition: 0.3s; padding: 8px 16px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-flex; align-items: center; gap: 6px; }
+        .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0 12px; }
+        tr.data-row { background: rgba(255, 255, 255, 0.03); border-radius: 16px; transition: 0.3s; }
+        td { padding: 16px; }
+    </style>
+</head>
+<body id="main-body" class="p-4 md:p-10 overflow-hidden">
+
+    <div id="wolf-gate">
+        <div class="mb-8"><i class="fa-solid fa-wolf-pack-battalion wolf-icon"></i></div>
+        <h2 class="text-xl font-black tracking-[5px] uppercase mb-2">မင်းက ဘယ်သူလဲ</h2>
+        <p class="text-white/20 text-[10px] mb-10 uppercase tracking-widest">မှားယွင်းစွာ ဝင်ရောက်ပါက ဝံပုလွေက ကိုက်ဝါးပါလိမ့်မည်</p>
+        <input type="password" id="passkey" class="pass-input" placeholder="ACCESS CODE" onkeyup="checkWolfPass(event)">
+    </div>
+
+    <div id="admin-content" class="hidden max-w-6xl mx-auto">
+        <header class="mb-10 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="text-center md:text-left">
+                <h1 class="text-4xl font-black gold-text tracking-tighter uppercase">Admin Command</h1>
+                <p class="text-white/40 text-[10px] tracking-[3px] font-bold uppercase mt-1">Naung Htake Tin • Security Guarded</p>
+            </div>
+            
+            <div class="card p-4 flex items-center gap-6 px-8">
+                <div class="text-center border-r border-white/10 pr-6">
+                    <p class="text-[9px] text-white/30 font-bold uppercase">System Status</p>
+                    <div id="statusLabel" class="text-xs font-black mt-1">Checking...</div>
+                </div>
+                <button onclick="toggleSystem()" id="switchBtn" class="px-6 py-2 rounded-xl font-black text-[10px] uppercase transition duration-500">
+                    Loading...
+                </button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="card p-8 border-l-4 border-amber-500 shadow-xl">
+                <p class="text-[10px] text-white/30 uppercase tracking-[2px]">Pending</p>
+                <h2 id="pendingCount" class="text-5xl font-black gold-text mt-2">0</h2>
+            </div>
+            <div class="card p-8 border-l-4 border-green-500 shadow-xl">
+                <p class="text-[10px] text-white/30 uppercase tracking-[2px]">Done</p>
+                <h2 id="doneCount" class="text-5xl font-black text-green-500 mt-2">0</h2>
+            </div>
+            <div class="grid grid-cols-1 gap-3">
+                <button onclick="fetchData()" class="card flex items-center justify-center hover:bg-gold/10 transition">
+                    <i class="fa-solid fa-rotate text-xl gold-text"></i>
+                    <span class="ml-3 font-black uppercase text-[10px]">Refresh List</span>
+                </button>
+                <button onclick="location.reload()" class="card flex items-center justify-center hover:bg-red-500/10 transition">
+                    <i class="fa-solid fa-lock text-xl text-red-500"></i>
+                    <span class="ml-3 font-black uppercase text-[10px] text-red-500">Logout</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table id="masterTable">
+                <thead>
+                    <tr class="text-[10px] text-white/20 uppercase tracking-[4px]">
+                        <th class="p-4 text-left font-black">Identity</th>
+                        <th class="p-4 text-left font-black">Topic</th>
+                        <th class="p-4 text-left font-black">Status</th>
+                        <th class="p-4 text-right font-black">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://sheetdb.io/api/v1/hgitfd6aa9ymz";
+
+        function checkWolfPass(e) {
+            if (e.key === "Enter") {
+                const pass = document.getElementById('passkey').value;
+                if (pass === "seyargyi") {
+                    document.getElementById('wolf-gate').style.display = 'none';
+                    document.getElementById('admin-content').classList.remove('hidden');
+                    document.getElementById('main-body').classList.remove('overflow-hidden');
+                    fetchData();
+                } else {
+                    Swal.fire({ title: 'ကိုက်ဝါးလိုက်ပြီ!', text: 'မင်းက ဘယ်သူမို့လို့ ခိုးဝင်တာလဲ။', icon: 'error', background: '#1a0000', color: '#ff4444' });
+                    document.getElementById('passkey').value = "";
+                }
+            }
+        }
+
+        async function fetchData() {
+            const tbody = document.getElementById('tableBody');
+            try {
+                const res = await fetch(API_URL);
+                const data = await res.json();
+                const switchRes = await fetch(`${API_URL}?sheet=Sheet2`);
+                const switchData = await switchRes.json();
+                updateSwitchUI(switchData[0].Switch);
+
+                const pending = data.filter(i => i.Status !== "Done");
+                const done = data.filter(i => i.Status === "Done");
+                document.getElementById('pendingCount').innerText = pending.length;
+                document.getElementById('doneCount').innerText = done.length;
+
+                tbody.innerHTML = "";
+                data.reverse().forEach(item => {
+                    const isDone = item.Status === "Done";
+                    tbody.innerHTML += `
+                        <tr class="data-row ${isDone ? 'opacity-30 grayscale' : ''}">
+                            <td><div class="font-black text-white text-lg">${item.အမည်}</div><div class="text-[10px] text-white/40 uppercase">${item.နေ့နံ} | ${item.ဖုန်း}</div></td>
+                            <td><div class="text-gold font-bold text-sm">${item.သိလိုသည်}</div></td>
+                            <td><span class="status-badge ${isDone ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'}">${isDone ? 'Done' : 'Pending'}</span></td>
+                            <td class="text-right space-x-2">
+                                ${!isDone ? `<button onclick="markDone('${item.ID}')" class="btn-action bg-green-600/10 text-green-400 border border-green-500/20 hover:bg-green-600 hover:text-white"><i class="fa-solid fa-check"></i></button>` : ''}
+                                <button onclick="deleteEntry('${item.ID}')" class="btn-action bg-red-600/10 text-red-500 hover:bg-red-600"><i class="fa-solid fa-trash-can"></i></button>
+                            </td>
+                        </tr>`;
+                });
+            } catch (err) { tbody.innerHTML = `<tr><td colspan="4" class="text-center py-20 text-red-500 font-black">DATABASE ERROR</td></tr>`; }
+        }
+
+        function updateSwitchUI(status) {
+            const btn = document.getElementById('switchBtn');
+            const label = document.getElementById('statusLabel');
+            if(status === "Open") {
+                btn.innerText = "Close System";
+                btn.className = "px-6 py-2 rounded-xl font-black text-[10px] uppercase bg-green-500/10 text-green-500 border border-green-500/20 hover:bg-red-500 hover:text-white transition";
+                label.innerText = "ACTIVE"; label.className = "text-xs font-black mt-1 text-green-500";
+            } else {
+                btn.innerText = "Open System";
+                btn.className = "px-6 py-2 rounded-xl font-black text-[10px] uppercase bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-green-500 hover:text-white transition";
+                label.innerText = "CLOSED"; label.className = "text-xs font-black mt-1 text-red-500";
+            }
+        }
+
+        async function toggleSystem() {
+            const btn = document.getElementById('switchBtn');
+            const currentStatus = btn.innerText.includes("Close") ? "Closed" : "Open";
+            btn.disabled = true;
+            try {
+                await fetch(`${API_URL}/Switch/Open?sheet=Sheet2`, {
+                    method: 'PATCH',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({"data": {"Switch": currentStatus}})
+                });
+                fetchData();
+            } catch (e) { Swal.fire('Error', 'Switch Failed', 'error'); }
+            finally { btn.disabled = false; }
+        }
+
+        async function markDone(id) {
+            try {
+                await fetch(`${API_URL}/ID/${id}`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({"data": {"Status": "Done"}}) });
+                fetchData();
+            } catch (e) { Swal.fire('Error', 'Update Failed', 'error'); }
+        }
+
+        async function deleteEntry(id) {
+            const confirm = await Swal.fire({ title: 'Confirm Deletion?', background: '#0a0a0a', color: '#fff', showCancelButton: true, confirmButtonColor: '#ef4444' });
+            if (confirm.isConfirmed) {
+                try { await fetch(`${API_URL}/ID/${id}`, { method: 'DELETE' }); fetchData(); } catch (e) { Swal.fire('Error', 'Delete Failed', 'error'); }
+            }
+        }
+    </script>
+</body>
 </html>

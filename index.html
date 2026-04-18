@@ -11,144 +11,101 @@
 
     <style>
         :root { --gold: #ffcf40; }
-        body { font-family: 'Pyidaungsu', serif; background-color: #0a0a0a; color: #fff; min-height: 100vh; }
-        .gold-text { color: var(--gold); }
+        body { font-family: 'Pyidaungsu', serif; background-color: #0a0a0a; color: #fff; }
         .card-glass { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 20px; }
-        
-        #wolf-gate { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .pass-input { background: #111; border: 1px solid #222; border-radius: 12px; font-size: 20px; text-align: center; padding: 15px; width: 280px; color: var(--gold); outline: none; }
-        
-        /* ရှင်းလင်းပြတ်သားသော ခလုတ်ဒီဇိုင်း */
-        .btn-status-on { background-color: #10b981; color: white; padding: 12px 30px; border-radius: 12px; font-weight: 900; transition: 0.3s; border: 2px solid transparent; }
-        .btn-status-off { background-color: #ef4444; color: white; padding: 12px 30px; border-radius: 12px; font-weight: 900; transition: 0.3s; border: 2px solid transparent; }
-        .active-status { border-color: white; box-shadow: 0 0 15px rgba(255,255,255,0.3); transform: scale(1.05); }
+        .btn-status-on { background-color: #10b981; color: white; padding: 12px 25px; border-radius: 12px; font-weight: 900; transition: 0.3s; opacity: 0.4; }
+        .btn-status-off { background-color: #ef4444; color: white; padding: 12px 25px; border-radius: 12px; font-weight: 900; transition: 0.3s; opacity: 0.4; }
+        .active-status { opacity: 1 !important; transform: scale(1.05); border: 2px solid white; box-shadow: 0 0 15px rgba(255,255,255,0.2); }
     </style>
 </head>
-<body id="main-body" class="p-4 md:p-8 overflow-hidden">
+<body class="p-4 md:p-8">
 
-    <div id="wolf-gate">
-        <i class="fa-solid fa-shield-cat text-5xl mb-6 text-zinc-800"></i>
-        <h1 class="text-xl font-bold mb-6 tracking-widest">SAYARGYI အတည်ပြုချက်လိုအပ်သည်</h1>
-        <input type="password" id="passkey" class="pass-input" placeholder="PASSWORD" onkeyup="checkAccess(event)">
+    <div id="wolf-gate" class="fixed inset-0 bg-black z-[9999] flex flex-col items-center justify-center">
+        <h1 class="text-xl font-bold mb-6 tracking-widest text-gold">SAYARGYI LOGIN</h1>
+        <input type="password" id="passkey" class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl text-center text-gold outline-none" placeholder="PASSWORD" onkeyup="if(event.key==='Enter') login()">
     </div>
 
     <div id="admin-content" class="hidden max-w-4xl mx-auto">
-        
-        <header class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
+        <header class="flex justify-between items-center mb-8">
             <div>
-                <h1 class="text-2xl font-black gold-text uppercase">Control Panel</h1>
-                <p id="systemStatus" class="text-xs text-zinc-500 mt-1 uppercase font-bold tracking-widest italic">Checking Server...</p>
+                <h1 class="text-2xl font-black text-gold">ADMIN DASHBOARD</h1>
+                <p id="currentStatusDisp" class="text-[10px] text-zinc-500 font-bold mt-1 uppercase italic">Syncing...</p>
             </div>
-
-            <div class="card-glass p-3 flex gap-4">
-                <button id="btnOpen" onclick="toggleSystem('Open')" class="btn-status-on">OPEN (ဖွင့်မယ်)</button>
-                <button id="btnClose" onclick="toggleSystem('Closed')" class="btn-status-off">CLOSE (ပိတ်မယ်)</button>
+            <div class="card-glass p-2 flex gap-3">
+                <button id="btnOpen" onclick="updateSystem('Open')" class="btn-status-on">OPEN</button>
+                <button id="btnClose" onclick="updateSystem('Closed')" class="btn-status-off">CLOSE</button>
             </div>
         </header>
 
-        <div class="grid grid-cols-2 gap-4 mb-8">
-            <div class="card-glass p-6 text-center border-l-4 border-gold">
-                <p class="text-[10px] text-zinc-500 font-bold uppercase mb-1">New Orders</p>
-                <h2 id="pendingCount" class="text-4xl font-black gold-text">0</h2>
-            </div>
-            <button onclick="fetchData()" class="card-glass p-6 flex flex-col items-center justify-center hover:bg-zinc-800 transition">
-                <i class="fa-solid fa-arrows-rotate text-2xl gold-text mb-2"></i>
-                <span class="text-[10px] font-bold uppercase">Refresh Data</span>
-            </button>
-        </div>
-
         <div id="dataList" class="space-y-4">
-            <div class="text-center py-20 opacity-20 italic">Loading database entries...</div>
+            <div class="text-center py-20 opacity-20 italic">Loading database...</div>
         </div>
-
     </div>
 
     <script>
         const API_URL = "https://sheetdb.io/api/v1/hgitfd6aa9ymz";
 
-        function checkAccess(e) {
-            if (e.key === "Enter") {
-                if (document.getElementById('passkey').value === "SAYARGYI") {
-                    document.getElementById('wolf-gate').style.display = 'none';
-                    document.getElementById('admin-content').classList.remove('hidden');
-                    document.getElementById('main-body').classList.remove('overflow-hidden');
-                    fetchData();
-                } else {
-                    Swal.fire({ title: 'မှားယွင်းသည်', text: 'ဆရာကြီး Password မဟုတ်ပါ။', icon: 'error', background: '#111', color: '#fff' });
-                }
+        function login() {
+            if (document.getElementById('passkey').value === "SAYARGYI") {
+                document.getElementById('wolf-gate').classList.add('hidden');
+                document.getElementById('admin-content').classList.remove('hidden');
+                refreshAll();
+            } else {
+                Swal.fire('မှားယွင်းသည်', 'စကားဝှက် ပြန်စစ်ပါ။', 'error');
             }
         }
 
-        async function fetchData() {
+        async function refreshAll() {
             try {
-                // Fetching main data and switch status (Sheet2)
-                const [resData, resSwitch] = await Promise.all([
-                    fetch(API_URL),
-                    fetch(`${API_URL}?sheet=Sheet2`)
-                ]);
+                // Get Switch Status from Sheet2
+                const resConf = await fetch(`${API_URL}?sheet=Sheet2`);
+                const conf = await resConf.json();
+                const status = conf[0].Switch;
                 
+                document.getElementById('currentStatusDisp').innerText = `SYSTEM IS: ${status}`;
+                document.getElementById('btnOpen').classList.toggle('active-status', status === 'Open');
+                document.getElementById('btnClose').classList.toggle('active-status', status === 'Closed');
+
+                // Get Submissions from Sheet1
+                const resData = await fetch(API_URL);
                 const data = await resData.json();
-                const switchConfig = await resSwitch.json();
-
-                // Update Switch UI
-                const currentStatus = switchConfig[0].Switch || switchConfig[0].Swith; // Supporting both spellings in your sheet
-                document.getElementById('systemStatus').innerText = `System Status: ${currentStatus}`;
-                
-                document.getElementById('btnOpen').classList.toggle('active-status', currentStatus === 'Open');
-                document.getElementById('btnClose').classList.toggle('active-status', currentStatus === 'Closed');
-
-                // Render List
                 const list = document.getElementById('dataList');
                 list.innerHTML = "";
-                document.getElementById('pendingCount').innerText = data.length;
-
+                
                 data.reverse().forEach(item => {
                     list.innerHTML += `
-                        <div class="card-glass p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div class="card-glass p-5 flex justify-between items-center">
                             <div>
-                                <h3 class="text-lg font-bold">${item.အမည်} <span class="text-xs text-gold ml-2">${item.နေ့နံ}</span></h3>
-                                <p class="text-sm text-zinc-400 mt-1"><i class="fa-solid fa-phone-volume mr-2"></i>${item.ဖုန်း}</p>
-                                <p class="text-xs text-zinc-500 italic mt-1">${item.သိလိုသည်} | ${item.အချိန်}</p>
+                                <h3 class="font-bold text-gold">${item.အမည်} <span class="text-[10px] text-white/40 ml-2">(${item.နေ့နံ})</span></h3>
+                                <p class="text-xs text-zinc-400 mt-1">${item.ဖုန်း} | ${item.သိလိုသည်}</p>
                             </div>
-                            <div class="flex gap-2">
-                                <a href="tel:${item.ဖုန်း}" class="p-3 bg-zinc-800 rounded-lg hover:bg-emerald-600 transition"><i class="fa-solid fa-phone"></i></a>
-                                <button onclick="deleteRow('${item.ID}')" class="p-3 bg-zinc-800 rounded-lg hover:bg-red-600 transition"><i class="fa-solid fa-trash-can"></i></button>
-                            </div>
+                            <button onclick="deleteRow('${item.ID}')" class="text-zinc-600 hover:text-red-500 transition"><i class="fa-solid fa-trash-can"></i></button>
                         </div>`;
                 });
-
-            } catch (err) { console.error(err); }
+            } catch (e) { console.log(e); }
         }
 
-        async function toggleSystem(newVal) {
-            Swal.fire({ title: 'Updating...', didOpen: () => Swal.showLoading(), background: '#111', color: '#fff' });
+        async function updateSystem(val) {
+            Swal.showLoading();
             try {
-                // Your sheet uses "Switch" or "Swith" (Based on your photo, cell A1 is "Swith")
-                // We will update column A where it's not empty
-                await fetch(`${API_URL}/Swith/Open?sheet=Sheet2`, {
+                // အကွက် A1 မှာ 'Switch' ဖြစ်နေတဲ့ Row ကို ရှာပြီး Value ကို Update လုပ်တာပါ
+                await fetch(`${API_URL}/Switch/Switch?sheet=Sheet2`, {
                     method: 'PATCH',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({"data": {"Swith": newVal, "Switch": newVal}})
+                    body: JSON.stringify({"data": {"Switch": val}})
                 });
-                fetchData();
+                await refreshAll();
                 Swal.close();
-            } catch (e) { Swal.fire('Error', 'Update Failed', 'error'); }
+            } catch (e) { Swal.fire('Error', 'မအောင်မြင်ပါ', 'error'); }
         }
 
         async function deleteRow(id) {
-            const result = await Swal.fire({
-                title: 'ဖျက်မှာ သေချာလား?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                background: '#111',
-                color: '#fff'
-            });
-            if (result.isConfirmed) {
+            if (confirm('ဖျက်မှာ သေချာလား?')) {
                 await fetch(`${API_URL}/ID/${id}`, { method: 'DELETE' });
-                fetchData();
+                refreshAll();
             }
         }
     </script>
 </body>
 </html>
+

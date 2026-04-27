@@ -10,36 +10,130 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        :root { --gold: #ffcf40; }
-        body { font-family: 'Pyidaungsu', serif; background-color: #0a0a0a; color: #fff; }
-        .card-glass { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 20px; }
-        .btn-status-on { background-color: #10b981; color: white; padding: 12px 25px; border-radius: 12px; font-weight: 900; transition: 0.3s; opacity: 0.4; }
-        .btn-status-off { background-color: #ef4444; color: white; padding: 12px 25px; border-radius: 12px; font-weight: 900; transition: 0.3s; opacity: 0.4; }
-        .active-status { opacity: 1 !important; transform: scale(1.05); border: 2px solid white; box-shadow: 0 0 15px rgba(255,255,255,0.2); }
+        :root { 
+            --gold: #ffcf40; 
+            --deep-gold: #b8860b; 
+            --dark-bg: #0a0a0a;
+        }
+
+        body { 
+            font-family: 'Pyidaungsu', serif; 
+            background-color: var(--dark-bg); 
+            background-image: radial-gradient(circle at 50% -20%, #3d2b00 0%, transparent 40%);
+            color: #fff; 
+            min-height: 100vh;
+        }
+
+        /* Glassmorphism Effect */
+        .card-glass { 
+            background: rgba(255, 255, 255, 0.03); 
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 207, 64, 0.1); 
+            border-radius: 20px; 
+            transition: 0.3s;
+        }
+
+        /* Status Buttons */
+        .btn-status-on { 
+            background: rgba(16, 185, 129, 0.1); 
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #10b981; 
+            padding: 10px 24px; 
+            border-radius: 12px; 
+            font-weight: 800; 
+            transition: 0.3s; 
+        }
+        
+        .btn-status-off { 
+            background: rgba(239, 68, 68, 0.1); 
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444; 
+            padding: 10px 24px; 
+            border-radius: 12px; 
+            font-weight: 800; 
+            transition: 0.3s; 
+        }
+
+        .active-status.btn-status-on { 
+            background: #10b981; 
+            color: white; 
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+            transform: scale(1.05);
+        }
+
+        .active-status.btn-status-off { 
+            background: #ef4444; 
+            color: white; 
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+            transform: scale(1.05);
+        }
+
+        /* Submission List Cards */
+        .data-card {
+            border-left: 4px solid var(--deep-gold);
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Login Screen */
+        .login-input {
+            background: rgba(255,255,255,0.05);
+            border: 1.5px solid rgba(255,207,64,0.2);
+            transition: 0.3s;
+        }
+        .login-input:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 15px rgba(255,207,64,0.2);
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <div id="wolf-gate" class="fixed inset-0 bg-black z-[9999] flex flex-col items-center justify-center">
-        <h1 class="text-xl font-bold mb-6 tracking-widest text-gold">SAYARGYI LOGIN</h1>
-        <input type="password" id="passkey" class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl text-center text-gold outline-none" placeholder="PASSWORD" onkeyup="if(event.key==='Enter') login()">
+    <div id="wolf-gate" class="fixed inset-0 bg-black z-[9999] flex flex-col items-center justify-center p-6 text-center">
+        <div class="mb-6">
+            <i class="fa-solid fa-shield-halved text-5xl text-gold mb-4 opacity-50"></i>
+            <h1 class="text-2xl font-black tracking-[0.2em] text-gold uppercase">Admin Control</h1>
+            <p class="text-zinc-500 text-xs mt-2 font-bold">PLEASE ENTER YOUR ACCESS KEY</p>
+        </div>
+        <input type="password" id="passkey" class="login-input w-full max-w-xs p-4 rounded-xl text-center text-gold outline-none font-bold" placeholder="••••••••" onkeyup="if(event.key==='Enter') login()">
+        <button onclick="login()" class="mt-4 text-gold text-xs font-black uppercase tracking-widest hover:underline">Verify Key</button>
     </div>
 
     <div id="admin-content" class="hidden max-w-4xl mx-auto">
-        <header class="flex justify-between items-center mb-8">
-            <div>
-                <h1 class="text-2xl font-black text-gold">ADMIN DASHBOARD</h1>
-                <p id="currentStatusDisp" class="text-[10px] text-zinc-500 font-bold mt-1 uppercase italic">Syncing...</p>
+        <header class="flex flex-col md:flex-row justify-between items-center gap-6 mb-12">
+            <div class="text-center md:text-left">
+                <h1 class="text-3xl font-black text-gold tracking-tight">ADMIN DASHBOARD</h1>
+                <div class="flex items-center justify-center md:justify-start gap-2 mt-2">
+                    <span id="status-dot" class="w-2 h-2 rounded-full bg-zinc-500"></span>
+                    <p id="currentStatusDisp" class="text-[11px] text-zinc-400 font-bold uppercase tracking-widest">Syncing Status...</p>
+                </div>
             </div>
-            <div class="card-glass p-2 flex gap-3">
+            
+            <div class="card-glass p-3 flex gap-4">
                 <button id="btnOpen" onclick="updateSystem('Open')" class="btn-status-on">OPEN</button>
                 <button id="btnClose" onclick="updateSystem('Closed')" class="btn-status-off">CLOSE</button>
             </div>
         </header>
 
-        <div id="dataList" class="space-y-4">
-            <div class="text-center py-20 opacity-20 italic">Loading database...</div>
+        <div class="mb-6 flex justify-between items-end px-2">
+            <h2 class="text-xs font-bold text-zinc-500 uppercase tracking-widest"><i class="fa-solid fa-list-ul mr-2 text-gold"></i> Recent Submissions</h2>
+            <button onclick="refreshAll()" class="text-gold text-xs font-bold hover:rotate-180 transition-transform duration-500"><i class="fa-solid fa-rotate"></i> Refresh</button>
         </div>
+
+        <div id="dataList" class="space-y-4">
+            <div class="text-center py-20 opacity-20 italic">
+                <i class="fa-solid fa-spinner fa-spin text-3xl mb-4"></i>
+                <p>Loading database...</p>
+            </div>
+        </div>
+        
+        <footer class="mt-20 text-center opacity-20 text-[10px] uppercase font-bold tracking-[5px]">
+            &copy; 2026 Naung Htake Tin Control
+        </footer>
     </div>
 
     <script>
@@ -51,44 +145,72 @@
                 document.getElementById('admin-content').classList.remove('hidden');
                 refreshAll();
             } else {
-                Swal.fire('မှားယွင်းသည်', 'စကားဝှက် ပြန်စစ်ပါ။', 'error');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'မှားယွင်းသည်',
+                    text: 'စကားဝှက် ပြန်စစ်ပါ။',
+                    background: '#1a1a1a',
+                    color: '#fff',
+                    confirmButtonColor: '#b8860b'
+                });
             }
         }
 
         async function refreshAll() {
             try {
-                // Get Switch Status from Sheet2
+                // Status Checker (Sheet2)
                 const resConf = await fetch(`${API_URL}?sheet=Sheet2`);
                 const conf = await resConf.json();
                 const status = conf[0].Switch;
                 
-                document.getElementById('currentStatusDisp').innerText = `SYSTEM IS: ${status}`;
-                document.getElementById('btnOpen').classList.toggle('active-status', status === 'Open');
-                document.getElementById('btnClose').classList.toggle('active-status', status === 'Closed');
+                const statusText = document.getElementById('currentStatusDisp');
+                const statusDot = document.getElementById('status-dot');
+                
+                statusText.innerText = `SYSTEM IS: ${status}`;
+                statusDot.className = `w-2 h-2 rounded-full ${status === 'Open' ? 'bg-green-500 shadow-[0_0_8px_#10b981]' : 'bg-red-500 shadow-[0_0_8px_#ef4444]'}`;
+                
+                document.getElementById('btnOpen').className = status === 'Open' ? 'btn-status-on active-status' : 'btn-status-on';
+                document.getElementById('btnClose').className = status === 'Closed' ? 'btn-status-off active-status' : 'btn-status-off';
 
-                // Get Submissions from Sheet1
+                // Submissions (Sheet1)
                 const resData = await fetch(API_URL);
                 const data = await resData.json();
                 const list = document.getElementById('dataList');
-                list.innerHTML = "";
                 
+                if (data.length === 0) {
+                    list.innerHTML = `<div class="card-glass p-10 text-center opacity-40">ဒေတာ မရှိသေးပါ။</div>`;
+                    return;
+                }
+
+                list.innerHTML = "";
                 data.reverse().forEach(item => {
                     list.innerHTML += `
-                        <div class="card-glass p-5 flex justify-between items-center">
+                        <div class="card-glass p-6 flex justify-between items-center data-card">
                             <div>
-                                <h3 class="font-bold text-gold">${item.အမည်} <span class="text-[10px] text-white/40 ml-2">(${item.နေ့နံ})</span></h3>
-                                <p class="text-xs text-zinc-400 mt-1">${item.ဖုန်း} | ${item.သိလိုသည်}</p>
+                                <div class="flex items-center gap-3">
+                                    <h3 class="font-bold text-gold text-lg">${item.အမည်}</h3>
+                                    <span class="px-2 py-1 bg-white/5 rounded text-[10px] text-white/50 font-bold uppercase">${item.နေ့နံ}</span>
+                                </div>
+                                <div class="text-xs text-zinc-400 mt-2 space-y-1">
+                                    <p><i class="fa-solid fa-phone mr-2 text-[10px]"></i> ${item.ဖုန်း}</p>
+                                    <p><i class="fa-solid fa-tag mr-2 text-[10px]"></i> <span class="text-zinc-200 font-bold">${item.သိလိုသည်}</span></p>
+                                    <p class="text-[9px] opacity-50"><i class="fa-solid fa-clock mr-2 text-[9px]"></i> ${item.အချိန်}</p>
+                                </div>
                             </div>
-                            <button onclick="deleteRow('${item.ID}')" class="text-zinc-600 hover:text-red-500 transition"><i class="fa-solid fa-trash-can"></i></button>
+                            <button onclick="deleteRow('${item.ID}')" class="w-10 h-10 flex items-center justify-center rounded-full bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
                         </div>`;
                 });
-            } catch (e) { console.log(e); }
+            } catch (e) { 
+                console.error(e);
+                document.getElementById('dataList').innerHTML = `<div class="text-red-500 text-center p-10">Network Error! Database ချိတ်ဆက်၍မရပါ။</div>`;
+            }
         }
 
         async function updateSystem(val) {
             Swal.showLoading();
             try {
-                // အကွက် A1 မှာ 'Switch' ဖြစ်နေတဲ့ Row ကို ရှာပြီး Value ကို Update လုပ်တာပါ
                 await fetch(`${API_URL}/Switch/Switch?sheet=Sheet2`, {
                     method: 'PATCH',
                     headers: {'Content-Type': 'application/json'},
@@ -96,16 +218,34 @@
                 });
                 await refreshAll();
                 Swal.close();
-            } catch (e) { Swal.fire('Error', 'မအောင်မြင်ပါ', 'error'); }
+            } catch (e) { 
+                Swal.fire({ icon: 'error', title: 'Error', text: 'ပြင်ဆင်မှုမအောင်မြင်ပါ', background: '#1a1a1a', color: '#fff' }); 
+            }
         }
 
         async function deleteRow(id) {
-            if (confirm('ဖျက်မှာ သေချာလား?')) {
-                await fetch(`${API_URL}/ID/${id}`, { method: 'DELETE' });
-                refreshAll();
-            }
+            Swal.fire({
+                title: 'ဖျက်မှာ သေချာလား?',
+                text: "ဤဒေတာကို ပြန်ယူ၍မရနိုင်တော့ပါ။",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#333',
+                confirmButtonText: 'Yes, Delete!',
+                background: '#1a1a1a',
+                color: '#fff'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        await fetch(`${API_URL}/ID/${id}`, { method: 'DELETE' });
+                        refreshAll();
+                        Swal.fire({ title: 'Deleted!', icon: 'success', background: '#1a1a1a', color: '#fff', timer: 1000, showConfirmButton: false });
+                    } catch (e) {
+                        Swal.fire('Error', 'ဖျက်၍မရပါ', 'error');
+                    }
+                }
+            });
         }
     </script>
 </body>
 </html>
-

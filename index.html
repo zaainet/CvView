@@ -3,112 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>နောင်ထိပ်တင် - Admin Control</title>
+    <title>နောင်ထိပ်တင် - Dashboard</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Pyidaungsu:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        :root { --gold: #ffcf40; --deep-gold: #b8860b; --dark-bg: #050505; }
-        body { font-family: 'Pyidaungsu', serif; background-color: var(--dark-bg); color: #fff; }
-        .card-glass { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 207, 64, 0.1); border-radius: 20px; }
+        :root { 
+            --gold: #ffcf40; 
+            --deep-gold: #b8860b; 
+            --dark-bg: #0a0a0a; 
+            --card-bg: rgba(255, 255, 255, 0.05);
+        }
         
-        /* Switch UI */
-        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--gold); }
-        input:checked + .slider:before { transform: translateX(24px); }
+        body { 
+            font-family: 'Pyidaungsu', serif; 
+            background-color: var(--dark-bg); 
+            color: #e5e7eb;
+            background-image: radial-gradient(circle at top right, #1a1a00, transparent);
+            min-height: 100vh;
+        }
 
-        .search-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 20px; width: 100%; outline: none; }
-        .tab-btn { padding: 8px 16px; border-radius: 10px; font-size: 12px; font-weight: bold; transition: 0.3s; color: #888; }
-        .tab-btn.active { background: var(--gold); color: #000; }
+        .glass-card { 
+            background: var(--card-bg); 
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 207, 64, 0.1); 
+            border-radius: 24px; 
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+        /* Status Toggle Switch */
+        .switch { position: relative; display: inline-block; width: 46px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { 
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; 
+            background-color: #3f3f46; transition: .4s; border-radius: 34px; 
+        }
+        .slider:before { 
+            position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; 
+            background-color: white; transition: .4s; border-radius: 50%; 
+        }
+        input:checked + .slider { background-color: var(--gold); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        .tab-active { 
+            background: var(--gold) !important; 
+            color: #000 !important; 
+            box-shadow: 0 4px 15px rgba(255, 207, 64, 0.3);
+        }
+
+        .row-done { opacity: 0.5; filter: grayscale(0.8); }
         
-        .row-item { border-bottom: 1px solid rgba(255,255,255,0.03); }
-        .done-status { opacity: 0.4; filter: grayscale(1); }
+        .shimmer {
+            background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
     </style>
 </head>
-<body>
+<body onload="refreshData()">
 
-    <div id="wolf-gate" class="fixed inset-0 bg-black z-[9999] flex items-center justify-center p-6">
-        <div class="card-glass p-10 w-full max-w-sm text-center">
-            <h1 class="text-2xl font-black text-gold mb-6 uppercase tracking-widest">SAYARGYI LOGIN</h1>
-            <input type="password" id="passkey" class="search-input text-center mb-4" placeholder="PASSWORD" onkeyup="if(event.key==='Enter') login()">
-            <button onclick="login()" class="w-full bg-gold text-black font-black py-3 rounded-xl">LOGIN</button>
-        </div>
-    </div>
-
-    <div id="admin-content" class="hidden min-h-screen">
-        <nav class="p-6 flex justify-between items-center bg-black/50 backdrop-blur-md sticky top-0 z-50 border-b border-white/5">
-            <h1 class="text-xl font-black text-gold">CONTROL PANEL</h1>
-            <div class="flex items-center gap-4">
-                <span class="text-[10px] font-bold text-zinc-500 uppercase">စာရင်းလက်ခံမှု:</span>
+    <nav class="sticky top-0 z-50 bg-black/60 backdrop-blur-xl border-b border-white/5">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gold rounded-xl flex items-center justify-center text-black shadow-lg shadow-yellow-500/20">
+                    <i class="fa-solid fa-crown text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-white hidden sm:block">နောင်ထိပ်တင် <span class="text-gold">Admin</span></h1>
+            </div>
+            
+            <div class="flex items-center gap-6 bg-white/5 px-4 py-2 rounded-2xl border border-white/5">
+                <div class="flex flex-col items-end">
+                    <span class="text-[10px] text-zinc-500 font-bold uppercase">System Status</span>
+                    <span id="statusLabel" class="text-[11px] text-gold font-bold">Checking...</span>
+                </div>
                 <label class="switch">
                     <input type="checkbox" id="systemToggle" onchange="toggleSystem()">
                     <span class="slider"></span>
                 </label>
             </div>
-        </nav>
+        </div>
+    </nav>
 
-        <main class="max-w-6xl mx-auto p-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-center">
-                <div class="card-glass p-6"><p class="text-zinc-500 text-xs font-bold uppercase">စုစုပေါင်း</p><h2 id="totalCount" class="text-3xl font-black mt-2">0</h2></div>
-                <div class="card-glass p-6 border-l-4 border-gold"><p class="text-zinc-500 text-xs font-bold uppercase">ကြည့်ရန်ကျန်</p><h2 id="pendingCount" class="text-3xl font-black text-gold mt-2">0</h2></div>
-                <div class="card-glass p-6 border-l-4 border-green-500"><p class="text-zinc-500 text-xs font-bold uppercase">ပြီးစီး</p><h2 id="doneCount" class="text-3xl font-black text-green-500 mt-2">0</h2></div>
+    <main class="max-w-6xl mx-auto p-6 space-y-8">
+        
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="glass-card p-6 flex items-center gap-5">
+                <div class="w-12 h-12 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center text-2xl"><i class="fa-solid fa-users"></i></div>
+                <div><p class="text-zinc-500 text-xs font-bold uppercase">စုစုပေါင်း</p><h2 id="totalCount" class="text-2xl font-black">0</h2></div>
+            </div>
+            <div class="glass-card p-6 flex items-center gap-5 border-l-4 border-gold">
+                <div class="w-12 h-12 bg-gold/10 text-gold rounded-2xl flex items-center justify-center text-2xl"><i class="fa-solid fa-hourglass-half"></i></div>
+                <div><p class="text-zinc-500 text-xs font-bold uppercase">ကြည့်ရန်ကျန်</p><h2 id="pendingCount" class="text-2xl font-black text-gold">0</h2></div>
+            </div>
+            <div class="glass-card p-6 flex items-center gap-5 border-l-4 border-green-500">
+                <div class="w-12 h-12 bg-green-500/10 text-green-500 rounded-2xl flex items-center justify-center text-2xl"><i class="fa-solid fa-circle-check"></i></div>
+                <div><p class="text-zinc-500 text-xs font-bold uppercase">ပြီးစီး</p><h2 id="doneCount" class="text-2xl font-black text-green-500">0</h2></div>
+            </div>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-4 justify-between items-center">
+            <div class="relative w-full lg:max-w-md">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"></i>
+                <input type="text" id="searchInput" class="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 focus:border-gold outline-none transition-all" placeholder="အမည် သို့မဟုတ် ဖုန်းဖြင့်ရှာရန်..." oninput="renderData()">
+            </div>
+            
+            <div class="flex bg-white/5 p-1.5 rounded-2xl w-full lg:w-auto overflow-x-auto">
+                <button onclick="filterTab('all')" id="tab-all" class="flex-1 lg:flex-none px-6 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap tab-active">အားလုံး</button>
+                <button onclick="filterTab('pending')" id="tab-pending" class="flex-1 lg:flex-none px-6 py-2 rounded-xl text-xs font-bold transition-all text-zinc-500 whitespace-nowrap">ကျန်ရှိ</button>
+                <button onclick="filterTab('done')" id="tab-done" class="flex-1 lg:flex-none px-6 py-2 rounded-xl text-xs font-bold transition-all text-zinc-500 whitespace-nowrap">ပြီးစီး</button>
+                <button onclick="refreshData()" class="px-4 py-2 text-zinc-400 hover:text-gold transition-colors"><i class="fa-solid fa-rotate"></i></button>
+            </div>
+        </div>
+
+        <div class="glass-card overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-white/5 text-zinc-500 text-[11px] font-bold uppercase tracking-wider">
+                        <tr>
+                            <th class="p-5">အမည် နှင့် အချက်အလက်</th>
+                            <th class="p-5">မေးမြန်းလိုသည်များ</th>
+                            <th class="p-5 text-right">လုပ်ဆောင်ချက်</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody" class="divide-y divide-white/5">
+                        </tbody>
+                </table>
+            </div>
+            
+            <div id="loading" class="p-20 text-center">
+                <i class="fa-solid fa-circle-notch fa-spin text-3xl text-gold mb-4"></i>
+                <p class="text-zinc-500 animate-pulse text-sm">ဒေတာများ ရယူနေပါသည်...</p>
             </div>
 
-            <div class="flex flex-col md:flex-row gap-4 mb-6">
-                <input type="text" id="searchInput" class="search-input flex-1" placeholder="နာမည် သို့မဟုတ် ဖုန်းဖြင့်ရှာရန်..." oninput="renderData()">
-                <div class="flex bg-white/5 p-1 rounded-xl gap-1">
-                    <button onclick="filterTab('all')" id="tab-all" class="tab-btn active">အားလုံး</button>
-                    <button onclick="filterTab('pending')" id="tab-pending" class="tab-btn">ကျန်ရှိ</button>
-                    <button onclick="filterTab('done')" id="tab-done" class="tab-btn">ပြီးစီး</button>
-                </div>
+            <div id="emptyState" class="hidden p-20 text-center">
+                <i class="fa-solid fa-folder-open text-4xl text-zinc-700 mb-4"></i>
+                <p class="text-zinc-500">ရှာဖွေမှု မတွေ့ရှိပါ။</p>
             </div>
-
-            <div class="card-glass overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead class="bg-white/5 text-zinc-500 text-[10px] font-bold uppercase">
-                            <tr>
-                                <th class="p-4 text-left">အမည် / ဖုန်း</th>
-                                <th class="p-4 text-left">အကြောင်းအရာ</th>
-                                <th class="p-4 text-right">လုပ်ဆောင်ချက်</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dataTableBody"></tbody>
-                    </table>
-                </div>
-                <div id="loading" class="p-20 text-center opacity-50"><i class="fa-solid fa-spinner fa-spin text-2xl"></i><p class="mt-2 text-xs">Loading Data...</p></div>
-            </div>
-        </main>
-    </div>
+        </div>
+    </main>
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbxKRQFaSMrqkvnCAiTpLuw3WowpBAfAIQHGaza8loAeCBoYQOrhLqsd2s0mERt7j3Xb9A/exec";
         let rawData = [];
         let currentTab = 'all';
 
-        function login() {
-            if (document.getElementById('passkey').value === "SAYARGYI") {
-                document.getElementById('wolf-gate').classList.add('hidden');
-                document.getElementById('admin-content').classList.remove('hidden');
-                refreshData();
-            } else { Swal.fire('Error', 'စကားဝှက် မှားယွင်းပါသည်။', 'error'); }
-        }
-
         async function refreshData() {
-            document.getElementById('loading').classList.remove('hidden');
+            showLoading(true);
             try {
                 const res = await fetch(API_URL);
                 const result = await res.json();
                 rawData = result.data.reverse();
-                document.getElementById('systemToggle').checked = result.switch === "Open";
+                
+                const isOpen = result.switch === "Open";
+                document.getElementById('systemToggle').checked = isOpen;
+                document.getElementById('statusLabel').innerText = isOpen ? "လက်ခံနေသည်" : "ပိတ်ထားသည်";
+                document.getElementById('statusLabel').className = isOpen ? "text-[11px] text-green-500 font-bold" : "text-[11px] text-red-500 font-bold";
+                
                 renderData();
-            } catch (e) { console.error(e); }
-            document.getElementById('loading').classList.add('hidden');
+            } catch (e) {
+                Swal.fire('Error', 'Connection ပြဿနာဖြစ်နေပါသည်။', 'error');
+            } finally {
+                showLoading(false);
+            }
         }
 
         function renderData() {
@@ -128,36 +196,69 @@
             document.getElementById('pendingCount').innerText = rawData.filter(i => i.Status !== "Done").length;
             document.getElementById('doneCount').innerText = rawData.filter(i => i.Status === "Done").length;
 
-            filtered.forEach(item => {
-                const isDone = item.Status === "Done";
-                tbody.innerHTML += `
-                    <tr class="row-item ${isDone ? 'done-status' : ''}">
-                        <td class="p-4">
-                            <div class="font-bold text-gold text-sm">${item.အမည်}</div>
-                            <div class="text-[11px] text-zinc-500">${item.ဖုန်း} (${item.နေ့နံ})</div>
-                        </td>
-                        <td class="p-4"><span class="text-xs bg-white/5 px-2 py-1 rounded">${item.သိလိုသည်}</span></td>
-                        <td class="p-4 text-right">
-                            <div class="flex justify-end gap-2">
-                                <button onclick="markStatus('${item.ID}', '${isDone ? 'Pending' : 'Done'}')" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-green-500">
-                                    <i class="fa-solid ${isDone ? 'fa-rotate-left' : 'fa-check'}"></i>
-                                </button>
-                                <button onclick="deleteData('${item.ID}')" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-red-500">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>`;
-            });
+            if (filtered.length === 0) {
+                document.getElementById('emptyState').classList.remove('hidden');
+            } else {
+                document.getElementById('emptyState').classList.add('hidden');
+                filtered.forEach(item => {
+                    const isDone = item.Status === "Done";
+                    tbody.innerHTML += `
+                        <tr class="transition-all hover:bg-white/[0.02] ${isDone ? 'row-done' : ''}">
+                            <td class="p-5">
+                                <div class="font-bold text-white mb-1">${item.အမည်}</div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-zinc-500"><i class="fa-solid fa-phone mr-1"></i> ${item.ဖုန်း}</span>
+                                    <button onclick="copyToClipboard('${item.ဖုန်း}')" class="text-[10px] bg-white/10 px-2 py-0.5 rounded hover:bg-gold hover:text-black transition-all">Copy</button>
+                                </div>
+                                <div class="text-[10px] text-gold/60 mt-1 uppercase font-bold">${item.နေ့နံ}</div>
+                            </td>
+                            <td class="p-5">
+                                <div class="text-sm text-zinc-300 max-w-xs leading-relaxed bg-white/5 p-3 rounded-xl border border-white/5">
+                                    ${item.သိလိုသည်}
+                                </div>
+                            </td>
+                            <td class="p-5 text-right">
+                                <div class="flex justify-end gap-3">
+                                    <button onclick="markStatus('${item.ID}', '${isDone ? 'Pending' : 'Done'}')" 
+                                            class="w-10 h-10 rounded-xl bg-green-500/10 text-green-500 flex items-center justify-center hover:bg-green-500 hover:text-white transition-all shadow-lg"
+                                            title="${isDone ? 'ပြန်ဖွင့်မည်' : 'ပြီးစီးကြောင်းမှတ်သားမည်'}">
+                                        <i class="fa-solid ${isDone ? 'fa-rotate-left' : 'fa-check'}"></i>
+                                    </button>
+                                    <button onclick="deleteData('${item.ID}')" 
+                                            class="w-10 h-10 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-lg"
+                                            title="ဖျက်ပစ်မည်">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>`;
+                });
+            }
         }
 
         async function toggleSystem() {
-            const val = document.getElementById('systemToggle').checked ? "Open" : "Closed";
+            const isChecked = document.getElementById('systemToggle').checked;
+            const val = isChecked ? "Open" : "Closed";
+            
+            document.getElementById('statusLabel').innerText = "Updating...";
+            
             await fetch(`${API_URL}?action=updateSwitch`, {
                 method: 'POST',
                 body: JSON.stringify({ status: val })
             });
-            Swal.fire({ title: 'System ' + val, icon: 'success', timer: 1000, showConfirmButton: false });
+            
+            document.getElementById('statusLabel').innerText = isChecked ? "လက်ခံနေသည်" : "ပိတ်ထားသည်";
+            document.getElementById('statusLabel').className = isChecked ? "text-[11px] text-green-500 font-bold" : "text-[11px] text-red-500 font-bold";
+            
+            Swal.fire({ 
+                title: 'System updated!', 
+                text: `လက်ခံမှုအား ${val} လုပ်လိုက်ပါပြီ။`,
+                icon: 'success', 
+                timer: 1500, 
+                showConfirmButton: false,
+                background: '#1a1a1a',
+                color: '#fff'
+            });
         }
 
         async function markStatus(id, status) {
@@ -166,27 +267,64 @@
                 method: 'POST',
                 body: JSON.stringify({ id: id, status: status })
             });
-            refreshData();
+            await refreshData();
             Swal.close();
         }
 
         async function deleteData(id) {
-            if (confirm('ဖျက်မှာ သေချာလား?')) {
+            const res = await Swal.fire({
+                title: 'သေချာပါသလား?',
+                text: "ဤစာရင်းကို အပြီးအပိုင် ဖျက်ပစ်ပါမည်။",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#333',
+                confirmButtonText: 'ဖျက်မည်',
+                cancelButtonText: 'မဖျက်တော့ပါ',
+                background: '#1a1a1a',
+                color: '#fff'
+            });
+
+            if (res.isConfirmed) {
                 Swal.showLoading();
                 await fetch(`${API_URL}?action=delete`, {
                     method: 'POST',
                     body: JSON.stringify({ id: id })
                 });
-                refreshData();
+                await refreshData();
                 Swal.close();
             }
         }
 
         function filterTab(type) {
             currentTab = type;
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`tab-${type}`).classList.add('active');
+            document.querySelectorAll('.tab-btn, button[id^="tab-"]').forEach(btn => {
+                btn.classList.remove('tab-active');
+                btn.classList.add('text-zinc-500');
+            });
+            const activeBtn = document.getElementById(`tab-${type}`);
+            activeBtn.classList.add('tab-active');
+            activeBtn.classList.remove('text-zinc-500');
             renderData();
+        }
+
+        function showLoading(state) {
+            const loader = document.getElementById('loading');
+            state ? loader.classList.remove('hidden') : loader.classList.add('hidden');
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2000,
+                timerProgressBar: true,
+                background: '#1a1a1a',
+                color: '#fff'
+            });
+            Toast.fire({ icon: 'success', title: 'Phone number copied!' });
         }
     </script>
 </body>

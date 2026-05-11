@@ -2,12 +2,11 @@
 <html lang="my">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>နောင်ထိပ်တင် - Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ဧည့်တွေ့စာရင်း- Admin Dashboard</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Pyidaungsu:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -16,316 +15,481 @@
             --gold: #ffcf40; 
             --deep-gold: #b8860b; 
             --dark-bg: #0a0a0a; 
-            --card-bg: rgba(255, 255, 255, 0.05);
         }
         
         body { 
             font-family: 'Pyidaungsu', serif; 
-            background-color: var(--dark-bg); 
+            background: var(--dark-bg); 
             color: #e5e7eb;
-            background-image: radial-gradient(circle at top right, #1a1a00, transparent);
+            background-image: radial-gradient(circle at 10% 20%, #1a1a0a, #000);
             min-height: 100vh;
         }
 
         .glass-card { 
-            background: var(--card-bg); 
+            background: rgba(20, 20, 20, 0.8); 
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 207, 64, 0.1); 
+            border: 1px solid rgba(255, 207, 64, 0.15); 
             border-radius: 24px; 
         }
 
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-thumb { background: #ffcf40; border-radius: 10px; }
 
-        /* Status Toggle Switch */
-        .switch { position: relative; display: inline-block; width: 46px; height: 24px; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { 
             position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; 
-            background-color: #3f3f46; transition: .4s; border-radius: 34px; 
+            background-color: #3f3f46; transition: .3s; border-radius: 34px; 
         }
         .slider:before { 
             position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; 
-            background-color: white; transition: .4s; border-radius: 50%; 
+            background-color: white; transition: .3s; border-radius: 50%; 
         }
         input:checked + .slider { background-color: var(--gold); }
-        input:checked + .slider:before { transform: translateX(22px); }
+        input:checked + .slider:before { transform: translateX(26px); }
 
         .tab-active { 
             background: var(--gold) !important; 
             color: #000 !important; 
-            box-shadow: 0 4px 15px rgba(255, 207, 64, 0.3);
+            box-shadow: 0 4px 15px rgba(255, 207, 64, 0.2);
         }
 
-        .row-done { opacity: 0.5; filter: grayscale(0.8); }
+        .status-pending { border-left: 3px solid #ffcf40; }
+        .status-done { border-left: 3px solid #22c55e; opacity: 0.6; filter: grayscale(0.3); }
         
-        .shimmer {
-            background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
+        .btn-action {
+            transition: all 0.2s;
         }
-        @keyframes loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
+        .btn-action:active { transform: scale(0.95); }
+
+        /* Login Overlay */
+        #loginOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(20px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     </style>
 </head>
-<body onload="refreshData()">
+<body>
 
-    <nav class="sticky top-0 z-50 bg-black/60 backdrop-blur-xl border-b border-white/5">
-        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-gold rounded-xl flex items-center justify-center text-black shadow-lg shadow-yellow-500/20">
-                    <i class="fa-solid fa-crown text-xl"></i>
+    <!-- Login Overlay -->
+    <div id="loginOverlay">
+        <div class="glass-card p-8 w-80 text-center">
+            <i class="fa-solid fa-crown text-5xl text-gold mb-4"></i>
+            <h2 class="text-xl font-bold mb-4">Admin Login</h2>
+            <input type="password" id="adminPassword" class="w-full bg-black/50 border border-gold/30 rounded-xl p-3 mb-4 text-white" placeholder="စကားဝှက်ထည့်ပါ">
+            <button onclick="checkLogin()" class="w-full bg-gold text-black font-bold py-3 rounded-xl">ဝင်ရောက်မည်</button>
+            <p class="text-xs text-zinc-500 mt-4">* အကယ်၍ စကားဝှက်မသိပါက ဆရာနောင်ထိပ်တင်အား ဆက်သွယ်ပါ။</p>
+        </div>
+    </div>
+
+    <!-- Main Dashboard (Hidden until login) -->
+    <div id="dashboard" style="display: none;">
+        <nav class="sticky top-0 z-50 bg-black/80 backdrop-blur-xl border-b border-gold/20">
+            <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gold rounded-xl flex items-center justify-center text-black shadow-lg">
+                        <i class="fa-solid fa-crown text-xl"></i>
+                    </div>
+                    <h1 class="text-lg font-bold">နောင်ထိပ်တင် <span class="text-gold">Admin</span></h1>
                 </div>
-                <h1 class="text-xl font-bold tracking-tight text-white hidden sm:block">နောင်ထိပ်တင် <span class="text-gold">Admin</span></h1>
-            </div>
-            
-            <div class="flex items-center gap-6 bg-white/5 px-4 py-2 rounded-2xl border border-white/5">
-                <div class="flex flex-col items-end">
-                    <span class="text-[10px] text-zinc-500 font-bold uppercase">System Status</span>
-                    <span id="statusLabel" class="text-[11px] text-gold font-bold">Checking...</span>
+                
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full">
+                        <span class="text-[10px] text-zinc-400">System Status</span>
+                        <label class="switch">
+                            <input type="checkbox" id="systemToggle" onchange="toggleSystemStatus()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <button onclick="logout()" class="text-red-400 hover:text-red-300 text-sm">
+                        <i class="fa-solid fa-sign-out-alt"></i> <span class="hidden sm:inline">ထွက်ရန်</span>
+                    </button>
                 </div>
-                <label class="switch">
-                    <input type="checkbox" id="systemToggle" onchange="toggleSystem()">
-                    <span class="slider"></span>
-                </label>
             </div>
-        </div>
-    </nav>
+        </nav>
 
-    <main class="max-w-6xl mx-auto p-6 space-y-8">
-        
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="glass-card p-6 flex items-center gap-5">
-                <div class="w-12 h-12 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center text-2xl"><i class="fa-solid fa-users"></i></div>
-                <div><p class="text-zinc-500 text-xs font-bold uppercase">စုစုပေါင်း</p><h2 id="totalCount" class="text-2xl font-black">0</h2></div>
+        <main class="max-w-7xl mx-auto p-4 space-y-6">
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="glass-card p-4 text-center">
+                    <i class="fa-solid fa-users text-2xl text-blue-400 mb-2"></i>
+                    <p class="text-2xl font-black" id="totalCount">0</p>
+                    <p class="text-[10px] text-zinc-400 uppercase">စုစုပေါင်း</p>
+                </div>
+                <div class="glass-card p-4 text-center border-l-4 border-gold">
+                    <i class="fa-solid fa-hourglass-half text-2xl text-gold mb-2"></i>
+                    <p class="text-2xl font-black text-gold" id="pendingCount">0</p>
+                    <p class="text-[10px] text-zinc-400 uppercase">ကြည့်ရန်ကျန်</p>
+                </div>
+                <div class="glass-card p-4 text-center border-l-4 border-green-500">
+                    <i class="fa-solid fa-check-circle text-2xl text-green-500 mb-2"></i>
+                    <p class="text-2xl font-black text-green-500" id="doneCount">0</p>
+                    <p class="text-[10px] text-zinc-400 uppercase">ပြီးစီး</p>
+                </div>
+                <div class="glass-card p-4 text-center">
+                    <i class="fa-solid fa-phone text-2xl text-purple-400 mb-2"></i>
+                    <p class="text-sm font-bold" id="phoneDisplay">09666664580</p>
+                    <p class="text-[10px] text-zinc-400 uppercase">Admin Phone</p>
+                </div>
             </div>
-            <div class="glass-card p-6 flex items-center gap-5 border-l-4 border-gold">
-                <div class="w-12 h-12 bg-gold/10 text-gold rounded-2xl flex items-center justify-center text-2xl"><i class="fa-solid fa-hourglass-half"></i></div>
-                <div><p class="text-zinc-500 text-xs font-bold uppercase">ကြည့်ရန်ကျန်</p><h2 id="pendingCount" class="text-2xl font-black text-gold">0</h2></div>
-            </div>
-            <div class="glass-card p-6 flex items-center gap-5 border-l-4 border-green-500">
-                <div class="w-12 h-12 bg-green-500/10 text-green-500 rounded-2xl flex items-center justify-center text-2xl"><i class="fa-solid fa-circle-check"></i></div>
-                <div><p class="text-zinc-500 text-xs font-bold uppercase">ပြီးစီး</p><h2 id="doneCount" class="text-2xl font-black text-green-500">0</h2></div>
-            </div>
-        </div>
 
-        <div class="flex flex-col lg:flex-row gap-4 justify-between items-center">
-            <div class="relative w-full lg:max-w-md">
-                <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"></i>
-                <input type="text" id="searchInput" class="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 focus:border-gold outline-none transition-all" placeholder="အမည် သို့မဟုတ် ဖုန်းဖြင့်ရှာရန်..." oninput="renderData()">
+            <!-- Search & Filters -->
+            <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
+                <div class="relative w-full md:w-96">
+                    <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 text-sm"></i>
+                    <input type="text" id="searchInput" class="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 focus:border-gold outline-none text-sm" placeholder="အမည် သို့မဟုတ် ဖုန်းဖြင့်ရှာရန်..." oninput="filterData()">
+                </div>
+                
+                <div class="flex gap-2">
+                    <button onclick="setFilter('all')" id="filterAll" class="px-5 py-2 rounded-xl text-xs font-bold transition-all bg-gold text-black">အားလုံး</button>
+                    <button onclick="setFilter('pending')" id="filterPending" class="px-5 py-2 rounded-xl text-xs font-bold transition-all bg-white/10 text-zinc-400">ကျန်ရှိ</button>
+                    <button onclick="setFilter('done')" id="filterDone" class="px-5 py-2 rounded-xl text-xs font-bold transition-all bg-white/10 text-zinc-400">ပြီးစီး</button>
+                    <button onclick="fetchData()" class="px-4 py-2 rounded-xl bg-white/5 text-gold hover:bg-gold/20">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
             </div>
-            
-            <div class="flex bg-white/5 p-1.5 rounded-2xl w-full lg:w-auto overflow-x-auto">
-                <button onclick="filterTab('all')" id="tab-all" class="flex-1 lg:flex-none px-6 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap tab-active">အားလုံး</button>
-                <button onclick="filterTab('pending')" id="tab-pending" class="flex-1 lg:flex-none px-6 py-2 rounded-xl text-xs font-bold transition-all text-zinc-500 whitespace-nowrap">ကျန်ရှိ</button>
-                <button onclick="filterTab('done')" id="tab-done" class="flex-1 lg:flex-none px-6 py-2 rounded-xl text-xs font-bold transition-all text-zinc-500 whitespace-nowrap">ပြီးစီး</button>
-                <button onclick="refreshData()" class="px-4 py-2 text-zinc-400 hover:text-gold transition-colors"><i class="fa-solid fa-rotate"></i></button>
-            </div>
-        </div>
 
-        <div class="glass-card overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead class="bg-white/5 text-zinc-500 text-[11px] font-bold uppercase tracking-wider">
-                        <tr>
-                            <th class="p-5">အမည် နှင့် အချက်အလက်</th>
-                            <th class="p-5">မေးမြန်းလိုသည်များ</th>
-                            <th class="p-5 text-right">လုပ်ဆောင်ချက်</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dataTableBody" class="divide-y divide-white/5">
+            <!-- Data Table -->
+            <div class="glass-card overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-white/5 border-b border-white/10">
+                            <tr class="text-[10px] text-zinc-400 uppercase tracking-wider">
+                                <th class="p-4">အမည် / ဖုန်း</th>
+                                <th class="p-4">နေ့နံ</th>
+                                <th class="p-4">အကြောင်းအရာ</th>
+                                <th class="p-4">အချိန်</th>
+                                <th class="p-4 text-center">လုပ်ဆောင်ချက်</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <tr>
+                                <td colspan="5" class="text-center py-10">
+                                    <i class="fa-solid fa-spinner fa-spin text-2xl text-gold"></i>
+                                    <p class="text-zinc-500 text-sm mt-2">ဒေတာများ ရယူနေပါသည်...</p>
+                                </td>
+                            </tr>
                         </tbody>
-                </table>
+                    </table>
+                </div>
             </div>
-            
-            <div id="loading" class="p-20 text-center">
-                <i class="fa-solid fa-circle-notch fa-spin text-3xl text-gold mb-4"></i>
-                <p class="text-zinc-500 animate-pulse text-sm">ဒေတာများ ရယူနေပါသည်...</p>
-            </div>
-
-            <div id="emptyState" class="hidden p-20 text-center">
-                <i class="fa-solid fa-folder-open text-4xl text-zinc-700 mb-4"></i>
-                <p class="text-zinc-500">ရှာဖွေမှု မတွေ့ရှိပါ။</p>
-            </div>
-        </div>
-    </main>
+        </main>
+    </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbxKRQFaSMrqkvnCAiTpLuw3WowpBAfAIQHGaza8loAeCBoYQOrhLqsd2s0mERt7j3Xb9A/exec";
-        let rawData = [];
-        let currentTab = 'all';
-
-        async function refreshData() {
-            showLoading(true);
-            try {
-                const res = await fetch(API_URL);
-                const result = await res.json();
-                rawData = result.data.reverse();
-                
-                const isOpen = result.switch === "Open";
-                document.getElementById('systemToggle').checked = isOpen;
-                document.getElementById('statusLabel').innerText = isOpen ? "လက်ခံနေသည်" : "ပိတ်ထားသည်";
-                document.getElementById('statusLabel').className = isOpen ? "text-[11px] text-green-500 font-bold" : "text-[11px] text-red-500 font-bold";
-                
-                renderData();
-            } catch (e) {
-                Swal.fire('Error', 'Connection ပြဿနာဖြစ်နေပါသည်။', 'error');
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        function renderData() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const tbody = document.getElementById('dataTableBody');
-            tbody.innerHTML = "";
-
-            let filtered = rawData.filter(item => {
-                const matchSearch = item.အမည်.toLowerCase().includes(searchTerm) || item.ဖုန်း.toString().includes(searchTerm);
-                const isDone = item.Status === "Done";
-                if (currentTab === 'pending') return matchSearch && !isDone;
-                if (currentTab === 'done') return matchSearch && isDone;
-                return matchSearch;
-            });
-
-            document.getElementById('totalCount').innerText = rawData.length;
-            document.getElementById('pendingCount').innerText = rawData.filter(i => i.Status !== "Done").length;
-            document.getElementById('doneCount').innerText = rawData.filter(i => i.Status === "Done").length;
-
-            if (filtered.length === 0) {
-                document.getElementById('emptyState').classList.remove('hidden');
+        // CONFIGURATION
+        const SHEETDB_API = "https://sheetdb.io/api/v1/hgitfd6aa9ymz";
+        const ADMIN_PASSWORD = "999999999"; // Change this to your desired password
+        
+        let allData = [];
+        let currentFilter = "all";
+        
+        // Check Login
+        function checkLogin() {
+            const pwd = document.getElementById('adminPassword').value;
+            if(pwd === ADMIN_PASSWORD) {
+                localStorage.setItem('adminLoggedIn', 'true');
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                fetchData();
             } else {
-                document.getElementById('emptyState').classList.add('hidden');
-                filtered.forEach(item => {
-                    const isDone = item.Status === "Done";
-                    tbody.innerHTML += `
-                        <tr class="transition-all hover:bg-white/[0.02] ${isDone ? 'row-done' : ''}">
-                            <td class="p-5">
-                                <div class="font-bold text-white mb-1">${item.အမည်}</div>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xs text-zinc-500"><i class="fa-solid fa-phone mr-1"></i> ${item.ဖုန်း}</span>
-                                    <button onclick="copyToClipboard('${item.ဖုန်း}')" class="text-[10px] bg-white/10 px-2 py-0.5 rounded hover:bg-gold hover:text-black transition-all">Copy</button>
-                                </div>
-                                <div class="text-[10px] text-gold/60 mt-1 uppercase font-bold">${item.နေ့နံ}</div>
-                            </td>
-                            <td class="p-5">
-                                <div class="text-sm text-zinc-300 max-w-xs leading-relaxed bg-white/5 p-3 rounded-xl border border-white/5">
-                                    ${item.သိလိုသည်}
-                                </div>
-                            </td>
-                            <td class="p-5 text-right">
-                                <div class="flex justify-end gap-3">
-                                    <button onclick="markStatus('${item.ID}', '${isDone ? 'Pending' : 'Done'}')" 
-                                            class="w-10 h-10 rounded-xl bg-green-500/10 text-green-500 flex items-center justify-center hover:bg-green-500 hover:text-white transition-all shadow-lg"
-                                            title="${isDone ? 'ပြန်ဖွင့်မည်' : 'ပြီးစီးကြောင်းမှတ်သားမည်'}">
-                                        <i class="fa-solid ${isDone ? 'fa-rotate-left' : 'fa-check'}"></i>
-                                    </button>
-                                    <button onclick="deleteData('${item.ID}')" 
-                                            class="w-10 h-10 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-lg"
-                                            title="ဖျက်ပစ်မည်">
-                                        <i class="fa-solid fa-trash-can"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>`;
+                Swal.fire({
+                    title: 'မှားယွင်းနေပါသည်',
+                    text: 'စကားဝှက်ကို ပြန်လည်စစ်ဆေးပါ။',
+                    icon: 'error',
+                    background: '#0a0a0a',
+                    color: '#fff'
                 });
             }
         }
-
-        async function toggleSystem() {
-            const isChecked = document.getElementById('systemToggle').checked;
-            const val = isChecked ? "Open" : "Closed";
+        
+        // Check existing session
+        if(localStorage.getItem('adminLoggedIn') === 'true') {
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            fetchData();
+        }
+        
+        // Logout
+        function logout() {
+            localStorage.removeItem('adminLoggedIn');
+            location.reload();
+        }
+        
+        // Fetch data from SheetDB
+        async function fetchData() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-10"><i class="fa-solid fa-spinner fa-spin text-2xl text-gold"></i><p class="text-zinc-500 text-sm mt-2">ဒေတာများ ရယူနေပါသည်...</p></td></tr>`;
             
-            document.getElementById('statusLabel').innerText = "Updating...";
+            try {
+                // Fetch main data
+                const res = await fetch(SHEETDB_API);
+                let data = await res.json();
+                allData = Array.isArray(data) ? data : [];
+                
+                // Fetch status from Sheet2
+                const statusRes = await fetch(`${SHEETDB_API}?sheet=Sheet2`);
+                const statusData = await statusRes.json();
+                const systemStatus = statusData[0]?.Switch === "Open";
+                document.getElementById('systemToggle').checked = systemStatus;
+                
+                updateStats();
+                filterData();
+            } catch(err) {
+                console.error(err);
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-red-400"><i class="fa-solid fa-circle-exclamation text-2xl"></i><p class="text-sm mt-2">Connection error. Please refresh.</p></td></tr>`;
+            }
+        }
+        
+        // Update statistics
+        function updateStats() {
+            const total = allData.length;
+            const pending = allData.filter(item => item.Status !== "Done").length;
+            const done = allData.filter(item => item.Status === "Done").length;
             
-            await fetch(`${API_URL}?action=updateSwitch`, {
-                method: 'POST',
-                body: JSON.stringify({ status: val })
-            });
+            document.getElementById('totalCount').innerText = total;
+            document.getElementById('pendingCount').innerText = pending;
+            document.getElementById('doneCount').innerText = done;
+        }
+        
+        // Filter data based on search and status
+        function filterData() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            let filtered = [...allData];
             
-            document.getElementById('statusLabel').innerText = isChecked ? "လက်ခံနေသည်" : "ပိတ်ထားသည်";
-            document.getElementById('statusLabel').className = isChecked ? "text-[11px] text-green-500 font-bold" : "text-[11px] text-red-500 font-bold";
+            // Filter by status
+            if(currentFilter === 'pending') {
+                filtered = filtered.filter(item => item.Status !== "Done");
+            } else if(currentFilter === 'done') {
+                filtered = filtered.filter(item => item.Status === "Done");
+            }
             
-            Swal.fire({ 
-                title: 'System updated!', 
-                text: `လက်ခံမှုအား ${val} လုပ်လိုက်ပါပြီ။`,
-                icon: 'success', 
-                timer: 1500, 
-                showConfirmButton: false,
-                background: '#1a1a1a',
+            // Filter by search
+            if(searchTerm) {
+                filtered = filtered.filter(item => 
+                    (item.အမည် && item.အမည်.toLowerCase().includes(searchTerm)) ||
+                    (item.ဖုန်း && item.ဖုန်း.toString().includes(searchTerm))
+                );
+            }
+            
+            renderTable(filtered);
+        }
+        
+        // Render table
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            
+            if(data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-zinc-500"><i class="fa-solid fa-inbox text-3xl mb-2"></i><p>စာရင်းမရှိပါ</p></td></tr>`;
+                return;
+            }
+            
+            tbody.innerHTML = data.map(item => `
+                <tr class="border-b border-white/5 hover:bg-white/5 transition-all ${item.Status === 'Done' ? 'status-done' : 'status-pending'}">
+                    <td class="p-4">
+                        <div class="font-bold text-white">${escapeHtml(item.အမည် || '-')}</div>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-xs text-zinc-400"><i class="fa-solid fa-phone mr-1"></i> ${item.ဖုန်း || '-'}</span>
+                            ${item.ဖုန်း ? `<button onclick="copyPhone('${item.ဖုန်း}')" class="text-[9px] bg-white/10 px-2 py-0.5 rounded hover:bg-gold hover:text-black"><i class="fa-regular fa-copy"></i></button>` : ''}
+                        </div>
+                    </td>
+                    <td class="p-4">
+                        <span class="text-xs text-gold/70 bg-gold/10 px-2 py-1 rounded-full">${item.နေ့နံ || '-'}</span>
+                    </td>
+                    <td class="p-4">
+                        <div class="text-sm text-zinc-300 max-w-xs">${escapeHtml(item.သိလိုသည် || '-')}</div>
+                    </td>
+                    <td class="p-4">
+                        <span class="text-[10px] text-zinc-500">${item.အချိန် || '-'}</span>
+                    </td>
+                    <td class="p-4 text-center">
+                        <div class="flex justify-center gap-2">
+                            ${item.Status !== 'Done' ? 
+                                `<button onclick="markDone('${item.ID}')" class="btn-action w-8 h-8 rounded-lg bg-green-500/20 text-green-500 hover:bg-green-500 hover:text-white" title="ပြီးစီးမှတ်မည်">
+                                    <i class="fa-solid fa-check text-xs"></i>
+                                </button>` :
+                                `<button onclick="markPending('${item.ID}')" class="btn-action w-8 h-8 rounded-lg bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500 hover:text-black" title="ပြန်ဖွင့်မည်">
+                                    <i class="fa-solid fa-undo text-xs"></i>
+                                </button>`
+                            }
+                            <button onclick="deleteEntry('${item.ID}')" class="btn-action w-8 h-8 rounded-lg bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white" title="ဖျက်မည်">
+                                <i class="fa-solid fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        // Mark as Done
+        async function markDone(id) {
+            const result = await Swal.fire({
+                title: 'ပြီးစီးကြောင်း မှတ်သားမည်?',
+                text: 'ဤအကြောင်းအရာကို ဖြေကြားပြီးပါက Done မှတ်ပါ။',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'ဟုတ်ကဲ့',
+                cancelButtonText: 'မလုပ်တော့ပါ',
+                background: '#0a0a0a',
                 color: '#fff'
             });
+            
+            if(result.isConfirmed) {
+                await updateStatus(id, "Done");
+            }
         }
-
-        async function markStatus(id, status) {
-            Swal.showLoading();
-            await fetch(`${API_URL}?action=updateStatus`, {
-                method: 'POST',
-                body: JSON.stringify({ id: id, status: status })
-            });
-            await refreshData();
-            Swal.close();
+        
+        // Mark as Pending
+        async function markPending(id) {
+            await updateStatus(id, "Pending");
         }
-
-        async function deleteData(id) {
-            const res = await Swal.fire({
-                title: 'သေချာပါသလား?',
-                text: "ဤစာရင်းကို အပြီးအပိုင် ဖျက်ပစ်ပါမည်။",
+        
+        // Update status in SheetDB
+        async function updateStatus(id, status) {
+            try {
+                const res = await fetch(`${SHEETDB_API}/ID/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ "Status": status })
+                });
+                
+                if(res.ok) {
+                    Swal.fire({
+                        title: 'အောင်မြင်ပါသည်',
+                        text: `စာရင်းအား ${status === 'Done' ? 'ပြီးစီးသည်' : 'ပြန်လည်ဖွင့်သည်'} ဟု မှတ်သားပြီးပါပြီ။`,
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        background: '#0a0a0a',
+                        color: '#fff'
+                    });
+                    fetchData();
+                }
+            } catch(err) {
+                Swal.fire('Error', 'အဆက်အသွယ် ချို့ယွင်းနေပါသည်', 'error');
+            }
+        }
+        
+        // Delete entry
+        async function deleteEntry(id) {
+            const result = await Swal.fire({
+                title: 'ဖျက်ပစ်မည်!',
+                text: 'ဤစာရင်းကို အပြီးအပိုင် ဖျက်ပစ်မည်။ ပြန်လည်၍မရနိုင်ပါ။',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#333',
                 confirmButtonText: 'ဖျက်မည်',
                 cancelButtonText: 'မဖျက်တော့ပါ',
-                background: '#1a1a1a',
+                background: '#0a0a0a',
                 color: '#fff'
             });
-
-            if (res.isConfirmed) {
-                Swal.showLoading();
-                await fetch(`${API_URL}?action=delete`, {
-                    method: 'POST',
-                    body: JSON.stringify({ id: id })
-                });
-                await refreshData();
-                Swal.close();
+            
+            if(result.isConfirmed) {
+                try {
+                    const res = await fetch(`${SHEETDB_API}/ID/${id}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if(res.ok) {
+                        Swal.fire('ဖျက်ပြီးပါပြီ', '', 'success');
+                        fetchData();
+                    }
+                } catch(err) {
+                    Swal.fire('Error', 'ဖျက်၍မရပါ', 'error');
+                }
             }
         }
-
-        function filterTab(type) {
-            currentTab = type;
-            document.querySelectorAll('.tab-btn, button[id^="tab-"]').forEach(btn => {
-                btn.classList.remove('tab-active');
-                btn.classList.add('text-zinc-500');
-            });
-            const activeBtn = document.getElementById(`tab-${type}`);
-            activeBtn.classList.add('tab-active');
-            activeBtn.classList.remove('text-zinc-500');
-            renderData();
+        
+        // Toggle system status (Open/Close)
+        async function toggleSystemStatus() {
+            const isOpen = document.getElementById('systemToggle').checked;
+            const statusValue = isOpen ? "Open" : "Closed";
+            
+            try {
+                // First, get existing Sheet2 data
+                const getRes = await fetch(`${SHEETDB_API}?sheet=Sheet2`);
+                let existing = await getRes.json();
+                
+                if(existing && existing[0]) {
+                    // Update existing
+                    await fetch(`${SHEETDB_API}/ID/${existing[0].ID}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ "Switch": statusValue })
+                    });
+                } else {
+                    // Create new
+                    await fetch(SHEETDB_API, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ "data": [{ "ID": 1, "Switch": statusValue }] })
+                    });
+                }
+                
+                Swal.fire({
+                    title: statusValue === 'Open' ? 'စာရင်းလက်ခံနေပါသည်' : 'စာရင်းလက်ခံမှုပိတ်ထားပါသည်',
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false,
+                    background: '#0a0a0a',
+                    color: '#fff'
+                });
+            } catch(err) {
+                console.error(err);
+                Swal.fire('Error', 'System status update failed', 'error');
+            }
         }
-
-        function showLoading(state) {
-            const loader = document.getElementById('loading');
-            state ? loader.classList.remove('hidden') : loader.classList.add('hidden');
+        
+        // Set filter
+        function setFilter(filter) {
+            currentFilter = filter;
+            
+            // Update button styles
+            document.getElementById('filterAll').className = filter === 'all' ? 'px-5 py-2 rounded-xl text-xs font-bold transition-all bg-gold text-black' : 'px-5 py-2 rounded-xl text-xs font-bold transition-all bg-white/10 text-zinc-400';
+            document.getElementById('filterPending').className = filter === 'pending' ? 'px-5 py-2 rounded-xl text-xs font-bold transition-all bg-gold text-black' : 'px-5 py-2 rounded-xl text-xs font-bold transition-all bg-white/10 text-zinc-400';
+            document.getElementById('filterDone').className = filter === 'done' ? 'px-5 py-2 rounded-xl text-xs font-bold transition-all bg-gold text-black' : 'px-5 py-2 rounded-xl text-xs font-bold transition-all bg-white/10 text-zinc-400';
+            
+            filterData();
         }
-
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text);
-            const Toast = Swal.mixin({
-                toast: true,
-                position: 'top-end',
+        
+        // Copy phone number
+        function copyPhone(phone) {
+            navigator.clipboard.writeText(phone);
+            Swal.fire({
+                title: 'ကော်ပီကူးပြီးပါပြီ',
+                text: phone,
+                icon: 'success',
+                timer: 1000,
                 showConfirmButton: false,
-                timer: 2000,
-                timerProgressBar: true,
-                background: '#1a1a1a',
+                background: '#0a0a0a',
                 color: '#fff'
             });
-            Toast.fire({ icon: 'success', title: 'Phone number copied!' });
         }
+        
+        // Escape HTML to prevent XSS
+        function escapeHtml(str) {
+            if(!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if(m === '&') return '&amp;';
+                if(m === '<') return '&lt;';
+                if(m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        // Refresh button
+        window.fetchData = fetchData;
     </script>
 </body>
-</html>
+    </html>
